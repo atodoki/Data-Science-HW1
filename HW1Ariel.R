@@ -18,7 +18,11 @@ nytData$age_group <- cut(nytData$Age, c(-Inf,18,24,34,54,64,Inf))
 hist(as.integer(nytData$age_group))
 
 # Using all data
-nytData$genderFactor <- factor(nytData$Gender)
+# factor gender 
+nytData$genderFactor[nytData$Gender == 0] <- "Male"
+nytData$genderFactor[nytData$Gender == 1] <- "Female"
+nytData$genderFactor <- factor(nytData$genderFactor)
+
 ggplot(nytData, aes(x=Impressions, fill = age_group))+geom_histogram(binwidth = 1)
 ggplot(nytData, aes(x=Impressions, fill = genderFactor))+geom_histogram(binwidth = 1) # is gender 0 for people who did not sign in?
 
@@ -27,11 +31,23 @@ signIn <- subset(nytData, Signed_In==1)
 nrow(signIn)
 hist(signIn$Age, breaks=10)
 hist(signIn$Impressions)
+plot(density(signIn$Impressions))
+ggplot(subset(signIn, Age < 18), aes(x = Impressions, fill = genderFactor))+geom_histogram(binwidth = 1) + labs(title="Age < 18", fill = "Gender")
 ggplot(signIn, aes(x=Impressions, fill = age_group))+geom_histogram(binwidth = 1)
 ggplot(signIn, aes(x=Impressions, fill = genderFactor))+geom_histogram(binwidth = 1)
 
+# Histogram with Normal Curve 
+# code found at https://www.statmethods.net/graphs/density.html
+x <- signIn$Impressions
+h <- hist(x, xlab = "Impressions", main="Histogram of Impressions with Normal Curve \n(signed in users)")
+xfit <- seq(min(x),max(x), length = 40)
+yfit <- dnorm(xfit, mean=mean(x), sd=sd(x))
+yfit <- yfit*diff(h$mids[1:2])*length(x)
+lines(xfit, yfit, col="blue", lwd=2)
+
+
 # CTR (click through rate)
-ggplot(subset(signIn,Impressions>0 & Clicks != 0), aes(x=Clicks/Impressions, fill=age_group))+geom_histogram(binwidth = 0.04)
+ggplot(subset(signIn,Impressions>0 & Clicks != 0), aes(x=Clicks/Impressions, fill=age_group))+geom_histogram(binwidth = 0.04) + labs(title="Click Through Rate (CTR)\n(does not include 0 clicks)")
 
 # gender categorization
 gen_click_counts <- table(signIn$Gender, signIn$Clicks)
@@ -40,19 +56,22 @@ barplot(gen_click_counts, col=c("darkblue", "red"), main = "Number of Clicks by 
 ####### Data of people who did not sign in ########
 # People who did not sign in have no data on gender or age
 noSignIn <- subset(nytData, Signed_In == 0)
+hist(noSignIn$Impressions)
 
 # histogram comparing impressions of sign in and no sign in
-nytData$signInFactor <- factor(nytData$Signed_In) # create a factor of Signed_In
-ggplot(nytData, aes(x=Impressions, fill=signInFactor))+geom_histogram(binwidth = 1) # stacked on each other
+nytData$signInFactor[nytData$Signed_In==0] <- "no"
+nytData$signInFactor[nytData$Signed_In==1] <- "yes"
+nytData$signInFactor <- factor(nytData$signInFactor) # create a factor of Signed_In
+ggplot(nytData, aes(x=Impressions, fill=signInFactor))+geom_histogram(binwidth = 1)+labs(title="Impressions", subtitle="signed in users vs non signed in users", fill = "Signed In") # stacked on each other
 
 #### new category (may show that more impressions will mean more clicks) ###
 nytData$impcat = cut(nytData$Impressions, c(0,5,10,15,20,Inf))
-ggplot(subset(nytData, Clicks>0), aes(x=Clicks, fill = impcat))+geom_histogram(binwidth = 1)
-ggplot(subset(nytData, Clicks>1), aes(x=Clicks, fill = impcat))+geom_histogram(binwidth = 1)
-ggplot(subset(nytData, Clicks>2), aes(x=Clicks, fill = impcat))+geom_histogram(binwidth = 1)
-ggplot(subset(nytData, Clicks>3), aes(x=Clicks, fill = impcat))+geom_histogram(binwidth = 1)
+ggplot(subset(nytData, Clicks>0), aes(x=Clicks, fill = impcat))+geom_histogram(binwidth = 1)+labs(title="Histogram of Clicks",fill="# of Impressions")
+ggplot(subset(nytData, Clicks>1), aes(x=Clicks, fill = impcat))+geom_histogram(binwidth = 1)+labs(title="Histogram of Clicks",fill="# of Impressions")
+ggplot(subset(nytData, Clicks>2), aes(x=Clicks, fill = impcat))+geom_histogram(binwidth = 1)+labs(title="Histogram of Clicks",fill="# of Impressions")
+ggplot(subset(nytData, Clicks>3), aes(x=Clicks, fill = impcat))+geom_histogram(binwidth = 1)+labs(title="Histogram of Clicks",fill="# of Impressions")
 
-######## Example code from "Doing Data Science" ########
+######################### Example code from "Doing Data Science" #####################
 
 # categorize
 nytData$agecat <- cut(nytData$Age, c(-Inf,18,24,34,54,64,Inf))
