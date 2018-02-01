@@ -12,6 +12,28 @@ hist(nyt1$Impressions)
 hist(nyt1$Clicks)
 hist(nyt1$Signed_In)
 
+# Using all data
+ggplot(nyt1, aes(x=Impressions, fill = agecat))+geom_histogram(binwidth = 1)
+
+
+## Data of people who signed in
+signIn <- subset(nyt1, Signed_In==1)
+nrow(signIn)
+hist(signIn$Age, breaks = 10)
+hist(signIn$Impressions)
+ggplot(signIn, aes(x=Impressions, fill = agecat))+geom_histogram(binwidth = 1)
+
+# CTR (click through rate)
+ggplot(subset(signIn,Impressions>0 & Clicks != 0), aes(x=Clicks/Impressions, fill=agecat))+geom_histogram(binwidth = 0.04)
+
+## Data of people who did not sign in
+noSignIn <- subset(nyt1, Signed_In == 0)
+
+# histogram comparing impressions of sign in and no sign in (they are layerd on top of each other)
+ggplot(signIn, aes(x=Impressions))+geom_histogram(binwidth = 1, fill="blue")+geom_histogram(data = noSignIn, binwidth = 1, fill="red")
+
+
+
 ######## Example code from "Doing Data Science" ########
 
 # categorize
@@ -33,8 +55,7 @@ summaryBy(Age~agecat, data = nyt1, FUN=siterange)
 summaryBy(Gender+Signed_In+Impressions+Clicks~agecat, data = nyt1)
 
 # plot
-ggplot(nyt1, aes(x=Impressions, fill=agecat))+
-  geom_histogram(binwidth=1)
+ggplot(nyt1, aes(x=Impressions, fill=agecat))+geom_histogram(binwidth=1)
 
 ggplot(nyt1, aes(x=agecat, y=Impressions, fill=agecat))+
   geom_boxplot()
