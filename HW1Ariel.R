@@ -1,47 +1,65 @@
 ##### Data Science CS429 Homework 1 #####
-nyt1 <- read.csv("HW1_data/nyt1.csv")
-View(nyt1)
+nytData <- read.csv("HW1_data/nyt1.csv")
+View(nytData)
+str(nytData)
 
 install.packages("ggplot2")
 library(ggplot2)
 
+# Initial histograms of each variable
+hist(nytData$Age)
+hist(nytData$Gender, breaks=2)
+hist(nytData$Impressions)
+hist(nytData$Clicks)
+hist(nytData$Signed_In, breaks = 2)
 
-hist(nyt1$Age)
-hist(nyt1$Gender)
-hist(nyt1$Impressions)
-hist(nyt1$Clicks)
-hist(nyt1$Signed_In)
+# categorize age_group
+nytData$age_group <- cut(nytData$Age, c(-Inf,18,24,34,54,64,Inf))
+hist(as.integer(nytData$age_group))
 
 # Using all data
-ggplot(nyt1, aes(x=Impressions, fill = agecat))+geom_histogram(binwidth = 1)
+nytData$genderFactor <- factor(nytData$Gender)
+ggplot(nytData, aes(x=Impressions, fill = age_group))+geom_histogram(binwidth = 1)
+ggplot(nytData, aes(x=Impressions, fill = genderFactor))+geom_histogram(binwidth = 1) # is gender 0 for people who did not sign in?
 
-
-## Data of people who signed in
-signIn <- subset(nyt1, Signed_In==1)
+####### Data of people who signed in #######
+signIn <- subset(nytData, Signed_In==1)
 nrow(signIn)
-hist(signIn$Age, breaks = 10)
+hist(signIn$Age, breaks=10)
 hist(signIn$Impressions)
-ggplot(signIn, aes(x=Impressions, fill = agecat))+geom_histogram(binwidth = 1)
+ggplot(signIn, aes(x=Impressions, fill = age_group))+geom_histogram(binwidth = 1)
+ggplot(signIn, aes(x=Impressions, fill = genderFactor))+geom_histogram(binwidth = 1)
 
 # CTR (click through rate)
-ggplot(subset(signIn,Impressions>0 & Clicks != 0), aes(x=Clicks/Impressions, fill=agecat))+geom_histogram(binwidth = 0.04)
+ggplot(subset(signIn,Impressions>0 & Clicks != 0), aes(x=Clicks/Impressions, fill=age_group))+geom_histogram(binwidth = 0.04)
 
-## Data of people who did not sign in
-noSignIn <- subset(nyt1, Signed_In == 0)
+# gender categorization
+gen_click_counts <- table(signIn$Gender, signIn$Clicks)
+barplot(gen_click_counts, col=c("darkblue", "red"), main = "Number of Clicks by Gender", xlab = "Number of Clicks", legend = c("Male", "Female"), beside=TRUE)
 
-# histogram comparing impressions of sign in and no sign in (they are layerd on top of each other)
-ggplot(signIn, aes(x=Impressions))+geom_histogram(binwidth = 1, fill="blue")+geom_histogram(data = noSignIn, binwidth = 1, fill="red")
+####### Data of people who did not sign in ########
+# People who did not sign in have no data on gender or age
+noSignIn <- subset(nytData, Signed_In == 0)
 
+# histogram comparing impressions of sign in and no sign in
+nytData$signInFactor <- factor(nytData$Signed_In) # create a factor of Signed_In
+ggplot(nytData, aes(x=Impressions, fill=signInFactor))+geom_histogram(binwidth = 1) # stacked on each other
 
+#### new category (may show that more impressions will mean more clicks) ###
+nytData$impcat = cut(nytData$Impressions, c(0,5,10,15,20,Inf))
+ggplot(subset(nytData, Clicks>0), aes(x=Clicks, fill = impcat))+geom_histogram(binwidth = 1)
+ggplot(subset(nytData, Clicks>1), aes(x=Clicks, fill = impcat))+geom_histogram(binwidth = 1)
+ggplot(subset(nytData, Clicks>2), aes(x=Clicks, fill = impcat))+geom_histogram(binwidth = 1)
+ggplot(subset(nytData, Clicks>3), aes(x=Clicks, fill = impcat))+geom_histogram(binwidth = 1)
 
 ######## Example code from "Doing Data Science" ########
 
 # categorize
-nyt1$agecat <- cut(nyt1$Age, c(-Inf,18,24,34,54,64,Inf))
-hist(as.integer(nyt1$agecat))
+nytData$agecat <- cut(nytData$Age, c(-Inf,18,24,34,54,64,Inf))
+hist(as.integer(nytData$agecat))
 
 # view
-summary(nyt1)
+summary(nytData)
 
 # brackets
 install.packages("doBy")
@@ -49,37 +67,37 @@ library("doBy")
 siterange <- function(x){
   c(length(x), min(x), mean(x), max(x))
 }
-summaryBy(Age~agecat, data = nyt1, FUN=siterange)
+summaryBy(Age~agecat, data = nytData, FUN=siterange)
 
 # so only signed in users have ages and genders
-summaryBy(Gender+Signed_In+Impressions+Clicks~agecat, data = nyt1)
+summaryBy(Gender+Signed_In+Impressions+Clicks~agecat, data = nytData)
 
 # plot
-ggplot(nyt1, aes(x=Impressions, fill=agecat))+geom_histogram(binwidth=1)
+ggplot(nytData, aes(x=Impressions, fill=agecat))+geom_histogram(binwidth=1)
 
-ggplot(nyt1, aes(x=agecat, y=Impressions, fill=agecat))+
+ggplot(nytData, aes(x=agecat, y=Impressions, fill=agecat))+
   geom_boxplot()
 
 # create click thru rate
 # we don't care about clicks if there are no impressions
 # if there are clicks with no imps my assumption about
 # this data are wrong
-nyt1$hasimps <- cut(nyt1$Impressions, c(-Inf,0,Inf))
-summaryBy(Clicks~hasimps, data = nyt1, FUN = siterange)
-ggplot(subset(nyt1, Impressions>0), aes(x=Clicks/Impressions, colour=agecat))+ geom_density()
-ggplot(subset(nyt1, Clicks>0), aes(x=Clicks/Impressions, colour=agecat)) + geom_density()
-ggplot(subset(nyt1, Clicks>0), aes(x=agecat, y=Clicks,fill=agecat)) + geom_boxplot()
-ggplot(subset(nyt1, Clicks>0), aes(x=Clicks, colour=agecat)) + geom_density()
+nytData$hasimps <- cut(nytData$Impressions, c(-Inf,0,Inf))
+summaryBy(Clicks~hasimps, data = nytData, FUN = siterange)
+ggplot(subset(nytData, Impressions>0), aes(x=Clicks/Impressions, colour=agecat))+ geom_density()
+ggplot(subset(nytData, Clicks>0), aes(x=Clicks/Impressions, colour=agecat)) + geom_density()
+ggplot(subset(nytData, Clicks>0), aes(x=agecat, y=Clicks,fill=agecat)) + geom_boxplot()
+ggplot(subset(nytData, Clicks>0), aes(x=Clicks, colour=agecat)) + geom_density()
 
 # create categories
-nyt1$scode[nyt1$Impressions==0] <- "NoImps"
-nyt1$scode[nyt1$Impressions>0] <- "Imps"
-nyt1$scode[nyt1$Clicks>0] <- "Clicks"
+nytData$scode[nytData$Impressions==0] <- "NoImps"
+nytData$scode[nytData$Impressions>0] <- "Imps"
+nytData$scode[nytData$Clicks>0] <- "Clicks"
 
 # Convert the column to a factor
-nyt1$scode <- factor(nyt1$scode)
-head(nyt1)
+nytData$scode <- factor(nytData$scode)
+head(nytData)
 
 # look at levels
 clen <- function(x){c(length(x))}
-etable <- summaryBy(Impressions~scode+Gender+agecat, data = nyt1, FUN=clen)
+etable <- summaryBy(Impressions~scode+Gender+agecat, data = nytData, FUN=clen)
