@@ -75,7 +75,7 @@ hist(signIn$Age, breaks=10, col = "skyblue")
 hist(signIn$Impressions, col="skyblue")
 hist(signIn$Gender, breaks = 2,col="skyblue")
 
-ggplot(subset(signIn, Age <= 18), aes(x = Impressions, fill = genderFactor))+geom_histogram(binwidth = 1) + labs(title="Age \u2264 18", fill = "Gender")
+ggplot(subset(signIn, Age <= 18), aes(x = Impressions, fill = genderFactor))+geom_histogram(binwidth = 1) + labs(title="Age <= 18", fill = "Gender")
 ggplot(subset(signIn, Age > 18 & Age <= 24), aes(x = Impressions, fill = genderFactor))+geom_histogram(binwidth = 1) + labs(title="Age (18, 24]", fill = "Gender")
 ggplot(subset(signIn, Age > 24 & Age <= 34), aes(x = Impressions, fill = genderFactor))+geom_histogram(binwidth = 1) + labs(title="Age (24, 34]", fill = "Gender")
 ggplot(subset(signIn, Age > 34 & Age <= 54), aes(x = Impressions, fill = genderFactor))+geom_histogram(binwidth = 1) + labs(title="Age (34, 54]", fill = "Gender")
@@ -146,7 +146,6 @@ sumImp <- sapply(impList, sum)
 names(sumImp) <- dayNames
 barplot(sumImp, col=c("cadetblue1", "cadetblue3"), main = "Number of Impressions per Day", xlab = "Day")
 
-
 # imp1 <- sum(nytData$Impressions)
 # imp2 <- sum(nytData2$Impressions)
 # imp3 <- sum(nytData3$Impressions)
@@ -165,7 +164,6 @@ sumSignIn <- sapply(signInList, sum)
 
 names(sumSignIn) <- dayNames
 barplot(sumSignIn, col=c("cadetblue1", "cadetblue3"), main = "Number of Sign Ins per Day", xlab = "Day")
-
 
 # sign1 <- sum(nytData$Signed_In)
 # sign2 <- sum(nytData2$Signed_In)
@@ -198,3 +196,39 @@ barplot(totalCTR, col=c("cadetblue1", "cadetblue3"), main = "Click Through Rate 
 # totalCTR <- c(clicks1/imp1,clicks2/imp2,clicks3/imp3,clicks4/imp4,clicks5/imp5,clicks6/imp6,clicks7/imp7)
 # names(totalCTR) <- dayNames
 # barplot(totalCTR, col=c("lightgreen", "lightcoral"), main = "Click Through Rate Per Day", xlab = "Day")
+
+# Avg of age per day
+signInDataList <- list()
+for(i in 1:31){
+  signInDataList[[i]] <- subset(datalist[[i]], Signed_In == 1) # get the subset of all the dataframes so we only use age from users who signed in
+}
+ageList <- lapply(signInDataList, "[",,"Age")
+avgAge <- sapply(ageList, mean)
+
+names(avgAge) <- dayNames
+boxplot(ageList, main="Boxplot of Age per Day", xlab = "Day", ylab = "Age")
+barplot(avgAge, col=c("cadetblue1", "cadetblue3"), main = "Average Age Per Day", xlab = "Day")
+summary(ageDataList[[31]])
+
+
+# Number of Genders per day
+genderAgeMonth <- function(modSignInList, ageGroupString){
+  genderList <- lapply(modSignInList, "[",,"Gender")
+  male <- sapply(genderList, sum)
+  totalPeople <- sapply(genderList, length)
+  female <- totalPeople - male
+
+  genderTable <- matrix(c(female,male), 2, 31, byrow = TRUE)
+  rownames(genderTable) <- c("Female", "Male")
+  colnames(genderTable) <- dayNames
+  genderTable <- as.table(genderTable)
+  barplot(genderTable, col=c("red", "blue"),main = paste("Number of Sign Ins per Gender per Day\n", ageGroupString),  xlab = "Day", legend = c("Female", "Male"),beside = TRUE, args.legend = list(x="topright"))
+}
+
+subSignIn <- list()
+for(i in 1:31){
+  subSignIn[[i]] <- subset(signInDataList[[i]], Age <=18)
+}
+genderAgeMonth(subSignIn, "Age <= 18")
+
+
