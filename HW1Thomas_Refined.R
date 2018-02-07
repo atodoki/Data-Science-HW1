@@ -64,3 +64,87 @@ signinclickerlist <- lapply(clickerlist, subset, Signed_In=="Yes")
 signinclickerframe <- Reduce(rbind, signinclickerlist)
 
 # let's create some graphs!
+# i began with simple bar graphs, with data from vectors extracted from the lists
+clickvector <- c(1:31)
+impvector <- c(1:31)
+ctrvector <- c(1:31)
+for (i in 1:31){
+  clickvector[i]<-sum(clickerlist[[i]]$Clicks) # because all clickers are in there and its smaller
+  impvector[i]<-sum(datalist[[i]]$Impressions)
+  ctrvector[i]<-clickvector[i]/impvector[i]
+}
+barplot(clickvector, col=c('cadetblue1', 'cadetblue3'), main = "Number of Clicks Per Day (All Users)", xlab = "Days", ylab="Clicks")
+barplot(impvector, col=c('cadetblue1', 'cadetblue3'), main = "Number of Impressions Per Day (All Users)", xlab = "Days", ylab="Impressions")
+barplot(ctrvector, col=c('cadetblue1', 'cadetblue3'), main="Clicks Per Impressions Per Day (All Users)", xlab="Days",ylab="Clicks/Impressions")
+
+# the following block is from ariel's code
+dayNames <- c(1:31)
+totalVisits <- sapply(datalist, nrow)
+names(totalVisits) <- dayNames
+barplot(totalVisits, col=c("green"), main = "Number of Visitors Per Day", xlab = "Day")
+
+# female vs male logins
+mvector <- c(1:31)
+wvector <- c(1:31)
+for (i in 1:31){
+  mvector[i] <- sum(signinlist[[i]]$Gender=="Male")
+  wvector[i] <- sum(signinlist[[i]]$Gender=="Female")
+}
+barplot(mvector, col=c("blue"), main = "Number of (Signed-In) Male Logins Per Day")
+barplot(wvector, col=c("red"), main = "Number of (Signed-In) Female Logins Per Day")
+# now with line plots!
+plot(mvector, col=c("blue"),type="l", main="Number Of Logins Per Day (Men=Red, Women=Blue")
+lines(wvector, col=c("red"))
+
+# now we begin investigating multiple variables at once! (before using ggplot)
+# how gender relates with clicking (among clickers and all signedin)
+# how many men/women are clickers vs total men/women
+
+malelist <- lapply(signinlist, subset, Gender=="Male")
+femlist <- lapply(signinlist, subset, Gender=="Female")
+
+maleclicklist <- lapply(clickerlist, subset, Gender=="Male")
+femclicklist <- lapply(clickerlist, subset, Gender=="Female")
+
+mClkList <- lapply(maleclicklist, '[', "Clicks")
+sumMClk <- sapply(mClkList, sum)
+fClkList <- lapply(femclicklist, '[', "Clicks")
+sumFClk <- sapply(fClkList, sum)
+clickCounts <- c(sum(sumMClk), sum(sumFClk))
+barplot(clickCounts, col=c("red", "blue"), main = "Total Clicks by Gender, May 2012", ylab="Number of Clicks", legend=c("Male", "Female"))
+
+mImpList <- lapply(malelist, '[', "Impressions")
+sumMImp <- sapply(mImpList, sum)
+fImpList <- lapply(femlist, '[', "Impressions")
+sumFImp <- sapply(fImpList, sum)
+impCounts <- c(sum(sumMImp), sum(sumFImp))
+barplot(impCounts, col=c("red", "blue"), main = "Total Impressions by Gender, May 2012", ylab="Number of Clicks", legend=c("Male", "Female"))
+
+ctrCounts <- clickCounts/impCounts
+barplot(ctrCounts, col=c("red", "blue"), main = "Total Clicks/Impressions by Gender, May 2012", ylab="Number of Clicks", legend=c("Male", "Female"))
+
+# now let's find ctr among clickers only
+mImpList2 <- lapply(maleclicklist, '[', "Impressions")
+sumMImp2 <- sapply(mImpList2, sum)
+fImpList2 <- lapply(femclicklist, '[', "Impressions")
+sumFImp2 <- sapply(fImpList2, sum)
+impCounts2 <- c(sum(sumMImp2), sum(sumFImp2))
+
+ctrCounts2 <- clickCounts/impCounts2
+barplot(ctrCounts2, col=c("red", "blue"), main = "Total Clicks/Impressions by Gender For Clickers, May 2012", ylab="Number of Clicks", legend=c("Male", "Female"))
+
+# finally, let's do some ggplots with our concatenated dataframe, signinclickerframe
+ggplot(signinclickerframe, aes(x=Impressions, fill=Gender))+geom_histogram(binwidth = 1) + labs(title="Impressions by Gender", fill = "Gender")
+ggplot(signinclickerframe, aes(x=Impressions, fill=AgeCat))+geom_histogram(binwidth = 1) + labs(title="Impressions by Gender", fill = "Gender")
+
+# earlier, we noticed interesting pattern differences between old men/women and young men/women
+# but that was only on a single day, let's compare them over all days total!
+# for that, we'll need to try to concatenate a very large list: signinlist
+# signinframe <- Reduce(rbind, signinlist) takes too long; let's break it down first
+oldlist <- lapply(signinlist, subset, AgeCat=='(64, Inf]')
+younglist <- lapply(signinlist, subset, AgeCat=='(-Inf,18]')
+# now concatenate each of these subsets to get frames we can pass to ggplot
+oldframe <- Reduce(rbind, oldlist)
+youngframe <- Reduce(rbind, younglist)
+ggplot(oldframe, aes(x = Impressions, fill = Gender))+geom_histogram(binwidth = 1) + labs(title="Age > 64", fill = "Gender")
+ggplot(youngframe, aes(x=Impressions, fill=Gender))+geom_histogram(binwidth = 1)+labs(title="Age < 18", fill = "Gender")
