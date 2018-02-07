@@ -73,7 +73,8 @@ for (i in 1:31){
 }
 barplot(mvector, col=c("red"), main = "Number of (Signed-In) Male Logins Per Day")
 barplot(wvector, col=c("blue"), main = "Number of (Signed-In) Female Logins Per Day")
-
+plot(mvector, col=c("red"),type="l", main="Number Of Logins Per Day (Men=Red, Women=Blue")
+lines(wvector, col=c("blue"))
 # let's try doing some daily analysis of all users
 # total clicks and impressions per day
 # total click thru rate per day
@@ -91,3 +92,97 @@ barplot(ctrvector, col="purple", main="Clicks Per Impressions Per Day (All Users
 
 # i'd argue that click-through rate is the most important statistic for advertisers;
 # let's compare across demographics instead of time (for the ENTIRE MONTH)
+# ... and try using lapply and sapply
+impList <- lapply(datalist, '[', "Impressions")
+sumImp <- sapply(impList, sum)
+
+# more stuff (copied from Ariel)
+totalVisits <- sapply(datalist, nrow)
+names(totalVisits) <- dayNames
+barplot(totalVisits, col=c("green"), main = "Number of Visitors Per Day", xlab = "Day")
+
+# let's do ctr by gender over the whole period
+# begin by building a lists of tables
+malelist <- list()
+femlist <- list()
+for (i in 1:31){
+  # separate each table by gender using already-build signinlist
+  malepoint <- subset(signinlist[[i]], Gender==1)
+  fempoint <- subset(signinlist[[i]], Gender==0)
+  malelist[[i]] <- malepoint
+  femlist[[i]]<- fempoint
+}
+# now let's do total click counts by gender
+mClkList <- lapply(malelist, '[', "Clicks")
+sumMClk <- sapply(mClkList, sum)
+fClkList <- lapply(femlist, '[', "Clicks")
+sumFClk <- sapply(fClkList, sum)
+clickCounts <- c(sum(sumMClk), sum(sumFClk))
+barplot(clickCounts, col=c("red", "blue"), main = "Total Clicks by Gender, May 2012", ylab="Number of Clicks", legend=c("Male", "Female"))
+
+# total impression counts by gender
+mImpList <- lapply(malelist, '[', "Impressions")
+sumMImp <- sapply(mImpList, sum)
+fImpList <- lapply(femlist, '[', "Impressions")
+sumFImp <- sapply(fImpList, sum)
+impCounts <- c(sum(sumMImp), sum(sumFImp))
+barplot(impCounts, col=c("red", "blue"), main = "Total Impressions by Gender, May 2012", ylab="Number of Clicks", legend=c("Male", "Female"))
+
+# ctr by gender
+ctrCounts <- clickCounts/impCounts
+barplot(ctrCounts, col=c("red", "blue"), main = "Total Clicks/Impression by Gender, May 2012", ylab="Number of Clicks", legend=c("Male", "Female"))
+
+# ariel discovered that there was an interesting pattern in >64 men vs women;
+# let's investigate age groups
+for (i in 1:31){
+  # let's simplify age groups
+  signinlist[[i]]$Age_Cat <- cut(signinlist[[i]]$Age, c(-Inf, 20,40,60,Inf))
+}
+# let's try and graph impressions by age group
+youngAgeList <- list()
+lowAgeList <- list()
+midAgeList <- list()
+oldAgeList <- list()
+for (i in 1:31){
+  youngAgePoint <- subset(signinlist[[i]], Age_Cat=='(-Inf,20]')
+  lowAgePoint <- subset(signinlist[[i]], Age_Cat=='(20,40]')
+  midAgePoint <- subset(signinlist[[i]], Age_Cat=='(40,60]')
+  oldAgePoint <- subset(signinlist[[i]], Age_Cat=='(60, Inf]')
+  youngAgeList[[i]] <- youngAgePoint
+  lowAgeList[[i]] <- lowAgePoint
+  midAgeList[[i]] <- midAgePoint
+  oldAgeList[[i]] <- oldAgePoint
+}
+
+youngImps <- lapply(youngAgeList, '[', "Impressions")
+lowImps <- lapply(lowAgeList, '[', "Impressions")
+midImps <- lapply(midAgeList, '[', "Impressions")
+oldImps <- lapply(oldAgeList, '[', "Impressions")
+youngImps_sum <- sapply(youngImps, sum)
+lowImps_sum <- sapply(lowImps, sum)
+midImps_sum <- sapply(midImps, sum)
+oldImps_sum <- sapply(oldImps, sum)
+ageImps <- c(sum(youngImps_sum), sum(lowImps_sum), sum(midImps_sum), sum(oldImps_sum))
+barplot(ageImps, col= c('cadetblue1', 'cadetblue2', 'cadetblue3','cadetblue4'), main = "Total Impressions by Age Group", ylab='Impressions')
+
+# let's focus in and investigate age 60+
+old_male <- lapply(oldAgeList, subset, Gender==1)
+old_fem <- lapply(oldAgeList, subset, Gender==0)
+oldImps_male <- lapply(old_male, '[', "Impressions")
+oldImps_fem <- lapply(old_fem, '[', "Impressions")
+oim_sum <- sapply(oldImps_male, sum)
+oif_sum <- sapply(oldImps_fem, sum)
+oldImps_gen <- c(sum(oim_sum), sum(oif_sum))
+barplot(oldImps_gen, col=c('blue', 'red'), main='Impressions by Gender, Age 60+', legend=c('Male', 'Female'))
+
+# WARNING: experimental stuff ahead
+# concatenate all of our dataframes in a list into one MASSIVE dataframe
+# allOldMales <- Reduce(rbind, old_male)
+# the above command works, now let's try it with a larger dataset: all old people
+allOld <- Reduce(rbind, oldAgeList)
+# now that we have a dataframe with ALL data, let's use ggplot!
+# NOTE: gender must be made a factor to differentiate fill colors!
+allOld$genderFactor[allOld$Gender==1] <- "Male"
+allOld$genderFactor[allOld$Gender==0] <- "Female"
+allOld$genderFactor <- factor(allOld$genderFactor)
+ggplot(allOld, aes(x=Impressions, fill=genderFactor))+geom_histogram(binwidth = 1) + labs(title="Age > 60", fill = "Gender")
