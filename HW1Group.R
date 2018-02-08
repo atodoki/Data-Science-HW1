@@ -7,6 +7,7 @@ library(ggplot2)
 library(doBy)
 
 # now use a for loop to load in all the csv files
+#!!!!! make sure to set current directory to the folder containing HW1_data !!!!
 datalist <- list()
 for (i in 1:31){
   datapoint <- read.csv(paste0("HW1_data/nyt",toString(i),".csv"))
@@ -129,17 +130,17 @@ sumMClk <- sapply(mClkList, sum)
 fClkList <- lapply(femclicklist, '[', "Clicks")
 sumFClk <- sapply(fClkList, sum)
 clickCounts <- c(sum(sumMClk), sum(sumFClk))
-barplot(clickCounts, col=c("red", "blue"), main = "Total Clicks by Gender, May 2012", ylab="Number of Clicks", legend=c("Male", "Female"))
+barplot(clickCounts, col=c("blue","red"), main = "Total Clicks by Gender, May 2012", ylab="Number of Clicks", legend=c("Male", "Female"))
 
 mImpList <- lapply(malelist, '[', "Impressions")
 sumMImp <- sapply(mImpList, sum)
 fImpList <- lapply(femlist, '[', "Impressions")
 sumFImp <- sapply(fImpList, sum)
 impCounts <- c(sum(sumMImp), sum(sumFImp))
-barplot(impCounts, col=c("red", "blue"), main = "Total Impressions by Gender, May 2012", ylab="Number of Clicks", legend=c("Male", "Female"))
+barplot(impCounts, col=c("blue", "red"), main = "Total Impressions by Gender, May 2012", ylab="Number of Clicks", legend=c("Male", "Female"))
 
 ctrCounts <- clickCounts/impCounts
-barplot(ctrCounts, col=c("red", "blue"), main = "Total Clicks/Impressions by Gender, May 2012", ylab="Number of Clicks", legend=c("Male", "Female"))
+barplot(ctrCounts, col=c("blue", "red"), main = "Total Clicks/Impressions by Gender, May 2012", ylab="Number of Clicks", legend=c("Male", "Female"))
 
 # now let's find ctr among clickers only
 mImpList2 <- lapply(maleclicklist, '[', "Impressions")
@@ -153,7 +154,7 @@ barplot(ctrCounts2, col=c("red", "blue"), main = "Total Clicks/Impressions by Ge
 
 # finally, let's do some ggplots with our concatenated dataframe, signinclickerframe
 ggplot(signinclickerframe, aes(x=Impressions, fill=Gender))+geom_histogram(binwidth = 1) + labs(title="Impressions by Gender", fill = "Gender")
-ggplot(signinclickerframe, aes(x=Impressions, fill=AgeCat))+geom_histogram(binwidth = 1) + labs(title="Impressions by Gender", fill = "Gender")
+ggplot(signinclickerframe, aes(x=Impressions, fill=AgeCat))+geom_histogram(binwidth = 1) + labs(title="Impressions by Age Category", fill = "Age Category")
 
 # earlier, we noticed interesting pattern differences between old men/women and young men/women
 # but that was only on a single day, let's compare them over all days total!
@@ -171,7 +172,6 @@ ggplot(youngframe, aes(x=Impressions, fill=Gender))+geom_histogram(binwidth = 1)
 ageList <- lapply(signinlist, "[",,"Age")
 avgAge <- sapply(ageList, mean)
 avgAge
-
 
 # Median of age
 medAge <- sapply(ageList, median)
