@@ -170,6 +170,14 @@ ggplot(youngframe, aes(x=Impressions, fill=Gender))+geom_histogram(binwidth = 1)
 # Avg of age per day
 ageList <- lapply(signinlist, "[",,"Age")
 avgAge <- sapply(ageList, mean)
+avgAge
 
-names(avgAge) <- dayNames
+
+# Median of age
+medAge <- sapply(ageList, median)
+medAge
 boxplot(ageList, main="Boxplot of Age per Day", xlab = "Day", ylab = "Age")
+
+# max and min of age for whole month
+max(sapply(ageList,max))
+min(sapply(ageList,min))
